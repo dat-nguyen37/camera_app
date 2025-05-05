@@ -24,7 +24,7 @@ app.use('/api/device', deviceRoute)
 
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "192.168.100.248", () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server runing on port ${PORT}`)
     connect()
 })
