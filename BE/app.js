@@ -1,6 +1,7 @@
 const express = require('express')
 const { connect } = require('./config/db')
 const cors = require('cors')
+require('dotenv').config()
 
 const app = express()
 app.use(express.json())
@@ -22,8 +23,8 @@ app.use('/api/device', deviceRoute)
 
 
 
-
-app.listen(5000, "192.168.1.6", () => {
-    console.log('Server runing on port 5000')
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, "192.168.100.248", () => {
+    console.log(`Server runing on port ${PORT}`)
     connect()
 })

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final apiUrl = "http://192.168.1.6:5000/api";
+  final apiUrl = "http://192.168.100.248:5000/api";
 
   Future<Map<String, dynamic>> signin(
     String email,

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class DeviceService {
-  final apiUrl = "http://192.168.1.6:5000/api/device";
+  final apiUrl = "http://192.168.100.248:5000/api/device";
 
   Future<Map<String, dynamic>> create(
     String device_name,
