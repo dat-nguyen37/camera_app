@@ -1,7 +1,6 @@
 import 'package:camera_app/screens/HomePage/full_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_main.dart';
-import 'cameradetail.dart';
 
 class HomeWrapper extends StatelessWidget {
   const HomeWrapper({super.key});
@@ -15,18 +14,6 @@ class HomeWrapper extends StatelessWidget {
           case HomeRoutes.home:
             return MaterialPageRoute(
               builder: (_) => const Homepage(),
-            );
-          case HomeRoutes.detail:
-            final args = settings.arguments as String;
-            return MaterialPageRoute(
-              builder: (_) => CameraDetail(streamUrl: args),
-            );
-          case HomeRoutes.fullscreen:
-            final args = settings.arguments as String;
-            return MaterialPageRoute(
-              builder:
-                  (_) =>
-                      FullscreenCameraPage(streamUrl: args),
             );
           default:
             return MaterialPageRoute(

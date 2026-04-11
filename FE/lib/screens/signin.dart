@@ -1,5 +1,6 @@
 import 'package:camera_app/providers/user_provider.dart';
 import 'package:camera_app/routes/app_routes.dart';
+import 'package:camera_app/services/notification_service.dart';
 import 'package:camera_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,26 +23,34 @@ class _SigninState extends State<Signin> {
   void signin() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
-    var result = await _authService.signin(email, password);
+    var result = await _authService.loginWithEzviz(
+      email,
+      password,
+    );
 
     if (!mounted) return;
-    if (result.containsKey('error')) {
+    if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['error']),
+          content: Text("Đăng nhập thất bại"),
           backgroundColor: Colors.red,
         ),
       );
     } else {
-      final user = result['success']['data']['others'];
       Provider.of<UserProvider>(
         context,
         listen: false,
-      ).setUser(user);
+      ).setToken(result);
+      String? fcmToken =
+          await NotificationService.getToken();
+
+      if (fcmToken != null) {
+        await AuthService().saveToken(email, fcmToken);
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['success']['message']),
+          content: Text("Đăng nhập thành công"),
           backgroundColor: Colors.green,
         ),
       );
@@ -66,32 +75,6 @@ class _SigninState extends State<Signin> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      shape: CircleBorder(),
-                      foregroundColor: Colors.blue,
-                      backgroundColor: const Color.fromARGB(
-                        255,
-                        228,
-                        220,
-                        220,
-                      ),
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        size: 30,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
                 Text(
                   'Sign in',
                   style: TextStyle(
@@ -141,16 +124,6 @@ class _SigninState extends State<Signin> {
                     ),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () {},
-                      child: Text('Forgot password?'),
-                    ),
-                  ],
-                ),
-
                 SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: signin,
@@ -166,77 +139,6 @@ class _SigninState extends State<Signin> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                SizedBox(height: 32),
-
-                // Divider with text
-                Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                      ),
-                      child: Text(
-                        'Or continue with',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                SizedBox(height: 16),
-
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Image.asset(
-                        'assets/icons/google.png',
-                        width: 27,
-                        height: 27,
-                      ),
-                      onPressed: () {},
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.facebook,
-                        color: Colors.blue,
-                        size: 35,
-                      ),
-                      onPressed: () {},
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Image.asset(
-                        'assets/icons/instagram.png',
-                        width: 27,
-                        height: 27,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-
-                // Sign in link
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
-                  children: [
-                    Text("Don't have an account ? "),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoute.signup,
-                        );
-                      },
-                      child: Text('Sign up'),
-                    ),
-                  ],
                 ),
               ],
             ),

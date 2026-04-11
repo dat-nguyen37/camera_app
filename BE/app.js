@@ -9,15 +9,11 @@ app.use(cors())
 
 const userRoute = require('./route/user')
 const deviceRoute = require('./route/device')
-
-
-
-
-
-
+const notificationRoute = require('./route/notification')
 
 app.use('/api/user', userRoute)
 app.use('/api/device', deviceRoute)
+app.use('/api/notification', notificationRoute)
 
 
 
