@@ -1,14 +1,13 @@
 import 'dart:io';
 
+import 'package:camera_app/providers/notification_provider.dart';
 import 'package:camera_app/providers/tab_provider.dart';
 import 'package:camera_app/providers/user_provider.dart';
 import 'package:camera_app/screens/HomePage/home_wrapper.dart';
 import 'package:camera_app/screens/notifications.dart';
-import 'package:camera_app/screens/profile.dart';
 import 'package:camera_app/services/notification_service.dart';
 import 'package:camera_app/services/user_service.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,31 +22,27 @@ class _MainPageViewState extends State<MainPageView> {
   late PageController _pageController;
 
   Future<void> _saveToken() async {
-    final userProvider = Provider.of<UserProvider>(
-      context,
-      listen: false,
-    );
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (Platform.isAndroid ||
         (Platform.isIOS && Firebase.apps.isNotEmpty)) {
       final fcmToken = await NotificationService.getToken();
       if (fcmToken != null) {
-        await AuthService().saveToken(
-          userProvider.getToken(),
-          fcmToken,
-        );
+        await AuthService().saveToken(userProvider.getToken(), fcmToken);
         userProvider.saveTokenLocal(fcmToken);
       }
-      NotificationService.listenTokenRefresh((
-        newToken,
-      ) async {
+      NotificationService.listenTokenRefresh((newToken) async {
         if (userProvider.user != null) {
-          await AuthService().saveToken(
-            newToken,
-            userProvider.user!['email'],
-          );
+          await AuthService().saveToken(newToken, userProvider.user!['email']);
           userProvider.saveTokenLocal(newToken);
         }
       });
+    }
+  }
+
+  void _onTabChanged() {
+    final idx = Provider.of<TabProvider>(context, listen: false).currentIndex;
+    if (_pageController.hasClients && (_pageController.page?.round() ?? 0) != idx) {
+      _pageController.jumpToPage(idx);
     }
   }
 
@@ -56,16 +51,25 @@ class _MainPageViewState extends State<MainPageView> {
     super.initState();
     _pageController = PageController(initialPage: 0);
     _saveToken();
+    // Sync PageController whenever TabProvider index changes from outside
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TabProvider>(context, listen: false).addListener(_onTabChanged);
+      final email = Provider.of<UserProvider>(context, listen: false).user?['email'];
+      if (email != null) {
+        Provider.of<NotificationProvider>(context, listen: false)
+            .fetchNotifications(email);
+      }
+    });
   }
 
   final List<Widget> _pages = [
     HomeWrapper(),
     NotificationsPage(),
-    ProfilePage(),
   ];
 
   @override
   void dispose() {
+    Provider.of<TabProvider>(context, listen: false).removeListener(_onTabChanged);
     _pageController.dispose();
     super.dispose();
   }
@@ -73,6 +77,8 @@ class _MainPageViewState extends State<MainPageView> {
   @override
   Widget build(BuildContext context) {
     final tabProvider = Provider.of<TabProvider>(context);
+    final unreadCount = context.watch<NotificationProvider>().unreadCount;
+
     return Scaffold(
       body: PageView(
         controller: _pageController,
@@ -87,18 +93,44 @@ class _MainPageViewState extends State<MainPageView> {
           tabProvider.setIndex(index);
           _pageController.jumpToPage(index);
         },
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Trang chủ',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications),
+                if (unreadCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             label: 'Thông báo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Hồ sơ',
           ),
         ],
         selectedItemColor: Colors.blue,

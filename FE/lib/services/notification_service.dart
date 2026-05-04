@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:camera_app/providers/notification_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -131,6 +132,8 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen((m) {
       debugPrint("📩 Received FCM Message: ${m.data}");
       showNotification(m);
+      // Cập nhật badge ngay lập tức
+      _addToNotificationProvider(m);
     });
     FirebaseMessaging.onMessageOpenedApp.listen((m) {
       debugPrint("User tapped notification: ${m.data}");
@@ -138,6 +141,20 @@ class NotificationService {
         _processDetection(m);
       }
     });
+  }
+
+  static void _addToNotificationProvider(RemoteMessage message) {
+    try {
+      final context = navigatorKey.currentContext;
+      if (context == null) return;
+      final title = message.notification?.title ?? message.data['title'] ?? 'Cảnh báo Camera';
+      final body = message.notification?.body ?? message.data['body'] ?? '';
+      final cameraId = message.data['cameraId'] ?? '';
+      Provider.of<NotificationProvider>(context, listen: false)
+          .addLocalNotification(title: title, body: body, cameraId: cameraId);
+    } catch (e) {
+      debugPrint("❌ Error adding to notification provider: $e");
+    }
   }
 
   static Future<String?> getToken() async {

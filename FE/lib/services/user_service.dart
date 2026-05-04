@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final apiUrl = "http://192.168.2.8:5000/api/user";
+  final apiUrl = "http://192.168.2.12:5000/api/user";
   static const String appKey =
       'ca870ed081f24c6d944051ec95c2c361';
   static const String appSecret =
@@ -34,6 +34,9 @@ class AuthService {
         final data = json.decode(response.body);
         if (data['code'] == '200') {
           await register(username, password);
+          print(
+            "data[data][accessToken] ${data['data']['accessToken']}",
+          );
           return data['data']['accessToken'];
         }
       }

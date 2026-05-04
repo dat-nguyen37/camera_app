@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:camera_app/providers/notification_provider.dart';
 import 'package:camera_app/providers/tab_provider.dart';
 import 'package:camera_app/providers/user_provider.dart';
 import 'package:camera_app/providers/detection_provider.dart';
 import 'package:camera_app/routes/app_routes.dart';
-import 'package:camera_app/screens/signin.dart';
 import 'package:camera_app/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -66,6 +66,9 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => DetectionProvider(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -84,7 +87,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      home: Signin(),
+      initialRoute: AppRoute.signin,
       onGenerateRoute: AppRoute.generateRoute,
       debugShowCheckedModeBanner: false,
     );

@@ -7,6 +7,16 @@ const Device = new mongoose.Schema({
     url: {
         type: String,
     },
+    detection_roi: {
+        x: { type: Number, default: 0 },
+        y: { type: Number, default: 0 },
+        width: { type: Number, default: 100 },
+        height: { type: Number, default: 100 }
+    },
+    is_detection_enabled: {
+        type: Boolean,
+        default: false
+    }
 },
     {
         timestamps: true
