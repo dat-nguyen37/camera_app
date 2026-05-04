@@ -41,7 +41,7 @@ class _HomePageState extends State<Homepage>
   final _formKey = GlobalKey<FormState>();
   final List<dynamic> listCamera = [];
 
-  Map<String, bool> _cameraOnlineStatus = {};
+  final Map<String, bool> _cameraOnlineStatus = {};
   bool _isLoading = true;
 
   late AnimationController _fadeController;
@@ -406,6 +406,7 @@ class _HomePageState extends State<Homepage>
   }
 }
 
+// ─── Camera Card Widget ───────────────────────────────────────────────────────
 class CameraCard extends StatefulWidget {
   final dynamic item;
   final String accessToken;
@@ -439,16 +440,40 @@ class _CameraCardState extends State<CameraCard> {
 
   void _reload() { setState(() { _reloadKey++; }); }
 
-  @override
-  Widget build(BuildContext context) {
-    _updateStatus();
+  void _openFullscreen() {
     final cameraId = widget.item['_id'] as String? ?? '';
     final cameraName = widget.item['name'] as String? ?? 'Camera';
     final cameraSerial = widget.item['url'] as String? ?? '';
 
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FullscreenCameraPage(
+          cameraId: cameraId,
+          cameraSerial: cameraSerial,
+          cameraName: cameraName,
+          accessToken: widget.accessToken,
+          initialRoi: (widget.item['detection_roi'] as Map<String, dynamic>?) ?? {},
+          isDetectionEnabled: widget.item['is_detection_enabled'] ?? false,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _updateStatus();
+    final cameraId = widget.item['_id'] as String? ?? '';
+    final cameraName = widget.item['name'] as String? ?? 'Camera ${widget.index + 1}';
+    final cameraSerial = widget.item['url'] as String? ?? '';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
-      decoration: BoxDecoration(color: _AppColors.card, borderRadius: BorderRadius.circular(20), border: Border.all(color: _isOnline ? _AppColors.onlineGreen.withOpacity(0.3) : _AppColors.border)),
+      decoration: BoxDecoration(
+        color: _AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _isOnline ? _AppColors.onlineGreen.withOpacity(0.3) : _AppColors.border),
+      ),
       child: Column(
         children: [
           ListTile(
@@ -458,91 +483,105 @@ class _CameraCardState extends State<CameraCard> {
               onSelected: (v) {
                 if (v == 'reload') _reload();
                 if (v == 'delete') widget.onDelete();
-                if (v == 'fullscreen') {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => FullscreenCameraPage(
-                    cameraId: cameraId,
-                    cameraSerial: cameraSerial,
-                    cameraName: cameraName,
-                    accessToken: widget.accessToken,
-                    initialRoi: (widget.item['detection_roi'] as Map<String, dynamic>?) ?? {},
-                    isDetectionEnabled: widget.item['is_detection_enabled'] ?? false,
-                  )));
-                }
+                // if (v == 'fullscreen') _openFullscreen();
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'fullscreen', child: Text('Xem toàn màn hình')),
+                // const PopupMenuItem(value: 'fullscreen', child: Text('Xem toàn màn hình')),
                 const PopupMenuItem(value: 'reload', child: Text('Tải lại')),
                 const PopupMenuItem(value: 'delete', child: Text('Xóa')),
               ],
             ),
           ),
-          SizedBox(
-            height: 200,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: _buildPlayer(cameraSerial, widget.accessToken, _isOnline, _reloadKey),
-                  ),
-                  Positioned.fill(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Consumer<DetectionProvider>(
-                          builder: (context, provider, child) {
-                            final detection = provider.getDetection(cameraId);
-                            if (detection == null) return const SizedBox.shrink();
+          GestureDetector(
+            // onTap: _openFullscreen,
+            child: SizedBox(
+              height: 200,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: _buildPlayer(cameraSerial, widget.accessToken, _isOnline, _reloadKey),
+                    ),
+                    if (_isOnline)
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            // children: [
+                            //   Icon(Icons.open_in_full_rounded, color: Colors.white, size: 12),
+                            //   SizedBox(width: 4),
+                            //   Text('Phóng to', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            // ],
+                          ),
+                        ),
+                      ),
+                    Positioned.fill(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Consumer<DetectionProvider>(
+                            builder: (context, provider, child) {
+                              final detection = provider.getDetection(cameraId);
+                              if (detection == null) return const SizedBox.shrink();
 
-                            return Stack(
-                              children: [
-                                Positioned(
-                                  left: detection.x * constraints.maxWidth,
-                                  top: detection.y * constraints.maxHeight,
-                                  width: detection.width * constraints.maxWidth,
-                                  height: detection.height * constraints.maxHeight,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: _AppColors.accentCyan, width: 1.5),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                    child: Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        Positioned(
-                                          top: -18,
-                                          left: -1,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                            decoration: BoxDecoration(
-                                                color: _AppColors.accentCyan,
-                                                borderRadius: BorderRadius.circular(2)),
-                                            child: const Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.person_outline_rounded, color: Colors.black, size: 8),
-                                                SizedBox(width: 3),
-                                                Text('HUMAN',
-                                                    style: TextStyle(
-                                                        color: Colors.black,
-                                                        fontSize: 8,
-                                                        fontWeight: FontWeight.bold)),
-                                              ],
+                              return Stack(
+                                children: [
+                                  Positioned(
+                                    left: detection.x * constraints.maxWidth,
+                                    top: detection.y * constraints.maxHeight,
+                                    width: detection.width * constraints.maxWidth,
+                                    height: detection.height * constraints.maxHeight,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: _AppColors.accentCyan, width: 1.5),
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Positioned(
+                                            top: -18,
+                                            left: -1,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                  color: _AppColors.accentCyan,
+                                                  borderRadius: BorderRadius.circular(2)),
+                                              child: const Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.person_outline_rounded, color: Colors.black, size: 8),
+                                                  SizedBox(width: 3),
+                                                  Text('HUMAN',
+                                                      style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 8,
+                                                          fontWeight: FontWeight.bold)),
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -590,6 +629,7 @@ class _StatItem extends StatelessWidget {
 }
 
 class _Separator extends StatelessWidget {
+  const _Separator();
   @override
   Widget build(BuildContext context) => Container(width: 1, height: 20, color: _AppColors.border);
 }

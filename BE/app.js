@@ -21,8 +21,8 @@ app.use('/api/alert', alertRoute)
 
 
 
+connect()
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server runing on port ${PORT}`)
-    connect()
+    console.log(`Server running on port ${PORT}`)
 })
